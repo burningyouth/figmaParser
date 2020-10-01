@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Figma Parser</title>
+  </head>
+  <body id="body">
+    <input type="file" onchange="readFile(this)" />
+    <script>
+      function rgba2hex(obj) {
+        const r = (obj.r * 255).toFixed(0),
+          g = (obj.g * 255).toFixed(0),
+          b = (obj.b * 255).toFixed(0),
+          a = (obj.a * 255).toFixed(0);
+        return (
+          "#" +
+          (r | (1 << 8)).toString(16).slice(1) +
+          (g | (1 << 8)).toString(16).slice(1) +
+          (b | (1 << 8)).toString(16).slice(1) +
+          (a !== "255" ? (a | (1 << 8)).toString(16).slice(1) : "")
+        );
+      }
+
+      function readFile(input) {
+        let file = input.files[0];
+        let reader = new FileReader();
+        let colors;
+        let colorsByTags = {};
+        let fileString = "";
+        reader.readAsText(file);
+        reader.onload = function() {
+          colors = JSON.parse(reader.result).styles;
+          colors = Object.keys(colors).map((key) => {
+            return {
+              name: colors[key].name,
+              value: rgba2hex(
+                colors[key].meta.style_thumbnail.fillPaints[0].color
+              ),
+            };
+          });
+
+          colors.sort((a, b) => a.name > b.name);
+
+          colors.forEach((color) => {
+            const tags = color.name.split("/").map((tag) => tag.trim());
+            fileString += `const ${tags[tags.length - 1]} = ${color.value};\n`;
+          });
+
+          fileString += "\nexport const colors = {";
+
+          colors.forEach((color, index) => {
+            const tags = color.name.split("/").map((tag) => tag.trim());
+            if (index !== 0) fileString += `, ${tags[tags.length - 1]}`;
+            else fileString += tags[tags.length - 1];
+          });
+
+          fileString += "};";
+
+          file = new Blob([fileString], { type: "text/plain" });
+          const link =
+            document.getElementById("link") || document.createElement("a");
+          link.href = URL.createObjectURL(file);
+          link.innerText = "Открыть";
+          link.id = "link";
+          document.getElementById("body").append(link);
+        };
+      }
+    </script>
+  </body>
+</html>
