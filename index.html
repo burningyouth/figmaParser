@@ -51,7 +51,9 @@
 
           colors.forEach((color) => {
             const tags = color.name.split("/").map((tag) => tag.trim());
-            fileString += `const ${tags[tags.length - 1]} = ${color.value};\n`;
+            fileString += `const ${tags[tags.length - 1]} = "${
+              color.value
+            }";\n`;
           });
 
           fileString += "\nexport const colors = {";
