@@ -38,27 +38,29 @@
         reader.readAsText(file);
         reader.onload = function() {
           colors = JSON.parse(reader.result).styles;
-          colors = Object.keys(colors).map((key) => {
-            return {
-              name: colors[key].name,
-              value: rgba2hex(
-                colors[key].meta.style_thumbnail.fillPaints[0].color
-              ),
-            };
+          colorsNormalized = [];
+          Object.keys(colors).forEach((key) => {
+            const tags = colors[key].name.split("/").map((tag) => tag.trim());
+            if (colors[key].meta.style_thumbnail.fillPaints)
+              colorsNormalized.push({
+                name: tags[tags.length - 1],
+                value: rgba2hex(
+                  colors[key].meta.style_thumbnail.fillPaints[0].color
+                ),
+                tags: [...tags.slice(0, tags.length - 1)],
+              });
           });
 
-          colors.sort((a, b) => a.name > b.name);
+          colorsNormalized.sort((a, b) => a.name > b.name);
+          console.log(colorsNormalized);
 
-          colors.forEach((color) => {
-            const tags = color.name.split("/").map((tag) => tag.trim());
-            fileString += `const ${tags[tags.length - 1]} = "${
-              color.value
-            }";\n`;
+          colorsNormalized.forEach((color) => {
+            fileString += `const ${color.name} = "${color.value}";\n`;
           });
 
           fileString += "\nexport const colors = {";
 
-          colors.forEach((color, index) => {
+          colorsNormalized.forEach((color, index) => {
             const tags = color.name.split("/").map((tag) => tag.trim());
             if (index !== 0) fileString += `, ${tags[tags.length - 1]}`;
             else fileString += tags[tags.length - 1];
